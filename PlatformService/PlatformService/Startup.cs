@@ -8,6 +8,8 @@ using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using PlatformService.Data;
 using PlatformService.Models.Repositories;
+using PlatformService.SyncDataServices;
+using PlatformService.SyncDataServices.Http;
 
 namespace PlatformService
 {
@@ -28,6 +30,7 @@ namespace PlatformService
             });
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddTransient<IPlatformRepository, PlatformRepository>();
+            services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

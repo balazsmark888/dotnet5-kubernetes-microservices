@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using PlatformService.Dtos;
 using PlatformService.Models;
 using PlatformService.Models.Repositories;
+using PlatformService.SyncDataServices;
 
 namespace PlatformService.Controllers
 {
@@ -15,11 +17,16 @@ namespace PlatformService.Controllers
     {
         private readonly IPlatformRepository _platformRepository;
         private readonly IMapper _mapper;
+        private readonly ICommandDataClient _commandDataClient;
 
-        public PlatformsController(IPlatformRepository platformRepository, IMapper mapper)
+        public PlatformsController(
+            IPlatformRepository platformRepository,
+            IMapper mapper,
+            ICommandDataClient commandDataClient)
         {
             _platformRepository = platformRepository;
             _mapper = mapper;
+            _commandDataClient = commandDataClient;
         }
 
         [HttpGet]
@@ -39,10 +46,19 @@ namespace PlatformService.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PlatformCreateDto platformCreateDto)
         {
-            var platform = _mapper.Map<Platform>(platformCreateDto);
-            await _platformRepository.CreateAsync(platform);
-            await _platformRepository.SaveAsync();
-            return CreatedAtRoute("", new { Id = platform.Id }, _mapper.Map<PlatformReadDto>(platform));
+            try
+            {
+                var platform = _mapper.Map<Platform>(platformCreateDto);
+                await _platformRepository.CreateAsync(platform);
+                await _platformRepository.SaveAsync();
+                var readDto = _mapper.Map<PlatformReadDto>(platform);
+                await _commandDataClient.SendPlatformToCommandServiceAsync(readDto);
+                return CreatedAtRoute("", new { platform.Id }, readDto);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
     }
 }
