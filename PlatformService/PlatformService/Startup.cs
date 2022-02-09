@@ -15,8 +15,11 @@ namespace PlatformService
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _environment;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
+            _environment = environment;
             Configuration = configuration;
         }
 
@@ -26,7 +29,14 @@ namespace PlatformService
         {
             services.AddDbContext<ApplicationDbContext>(opt =>
             {
-                opt.UseInMemoryDatabase("Temp");
+                if (_environment.IsDevelopment())
+                {
+                    opt.UseInMemoryDatabase("Temp");
+                }
+                if (_environment.IsProduction())
+                {
+                    opt.UseSqlServer(Configuration.GetConnectionString("PlatformsDb"));
+                }
             });
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddTransient<IPlatformRepository, PlatformRepository>();
@@ -58,7 +68,7 @@ namespace PlatformService
                 endpoints.MapControllers();
             });
 
-            app.PopulateData();
+            app.PopulateData(env.IsProduction());
         }
     }
 }

@@ -16,16 +16,16 @@ spec:
         - name: command-service
           image: balazsmark888/command-service:latest
 ---
-apiVersion: apps/v1
-  kind: Service
-metadata: 
+apiVersion: v1
+kind: Service
+metadata:
   name: command-cluster-ip-service
 spec:
-  type: ClusterIp
-  selectior:
+  type: ClusterIP
+  selector:
     app: command-service
-  ports: 
-    - name: command-service
-      protocol: TCP
-      port: 80
-      targetPort: 80
+  ports:
+  - name: command-service
+    protocol: TCP
+    port: 80
+    targetPort: 80
